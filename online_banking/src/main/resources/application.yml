@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: online_banking
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:digitalbanking}?createDatabaseIfNotExist=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:Jonah@2024}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+app:
+  min-funding-amount: ${MIN_FUNDING_AMOUNT:500}
+  loan:
+    min-amount: ${LOAN_MIN_AMOUNT:1000}
+    max-amount: ${LOAN_MAX_AMOUNT:10000}
