@@ -23,6 +23,22 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Customer register(CustomerDto dto) {
+        Customer existing = customerRepository.findByEmail(dto.email);
+
+        if (existing != null) {
+            if (existing.getStatus() == CustomerStatus.ACTIVE) {
+                throw new RuntimeException("Customer already registered and verified.");
+            } else if (existing.getStatus() == CustomerStatus.PENDING_VERIFICATION) {
+                // Generate a new code and update
+                String newCode = UUID.randomUUID().toString().substring(0, 6);
+                existing.setVerificationCode(newCode);
+                customerRepository.save(existing);
+
+                System.out.println("New verification code sent (mock): " + newCode);
+                throw new RuntimeException("Customer already registered. A new verification code has been sent.");
+            }
+        }
+
         Customer customer = new Customer();
         customer.setName(dto.name);
         customer.setEmail(dto.email);
@@ -31,25 +47,35 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setMobileNumber(dto.mobileNumber);
         customer.setStatus(CustomerStatus.PENDING_VERIFICATION);
         customer.setVerificationCode(UUID.randomUUID().toString().substring(0, 6));
+
         Customer saved = customerRepository.save(customer);
 
         System.out.println("Mock email sent with code: " + saved.getVerificationCode());
         return saved;
     }
 
+
     @Override
     public Customer verify(VerificationDto dto) {
         Customer customer = customerRepository.findByEmail(dto.email);
-        if (customer != null && customer.getVerificationCode().equals(dto.verificationCode)) {
-            customer.setStatus(CustomerStatus.ACTIVE);
-            customerRepository.save(customer);
-
-            Account account = new Account();
-            account.setCustomerId(customer.getId());
-            account.setBalance(0);
-            accountRepository.save(account);
+        if (customer == null) {
+            throw new RuntimeException("Customer not found.");
         }
+
+        if (!customer.getVerificationCode().equals(dto.verificationCode)) {
+            throw new RuntimeException("Invalid verification code.");
+        }
+
+        customer.setStatus(CustomerStatus.ACTIVE);
+        customerRepository.save(customer);
+
+        Account account = new Account();
+        account.setCustomerId(customer.getId());
+        account.setBalance(0);
+        accountRepository.save(account);
+
         return customer;
     }
+
 }
 
